@@ -159,7 +159,9 @@ function updateStatus () {
   $fen.html(game.fen())
   $pgn.html(game.pgn())
   //play the blacks
-  if(startPosition === 0){
+  var delay = 1000
+  setTimeout(function(){
+      if(startPosition === 0){
 	  var currSum = globalSum
 	  positionCount = 0
 	  var [bestMove, bestMoveValue] = minimax(game, 3, Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY, true, -currSum, 'b');
@@ -169,6 +171,8 @@ function updateStatus () {
 	  board.position(game.fen())
 	  
   }
+},delay);
+  
 }
 
 var config = {
