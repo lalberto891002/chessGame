@@ -7,6 +7,8 @@ var $pgn = $('#pgn')
 var globalSum = 0
 var positionCount
 var startPosition = 1
+var single = false
+const MAX_DEPTH = 3 // 3 by default
 
 var weights = { 'p': 100, 'n': 280, 'b': 320, 'r': 479, 'q': 929, 'k': 60000, 'k_e': 60000 };
 var pst_w = {
@@ -161,10 +163,10 @@ function updateStatus () {
   //play the blacks
   var delay = 1000
   setTimeout(function(){
-      if(startPosition === 0){
+      if(startPosition === 0 && single === true){
 	  var currSum = globalSum
 	  positionCount = 0
-	  var [bestMove, bestMoveValue] = minimax(game, 3, Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY, true, -currSum, 'b');
+	  var [bestMove, bestMoveValue] = minimax(game, MAX_DEPTH, Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY, true, -currSum, 'b');
 	  var move = bestMove
 	  globalSum = evaluateBoard(move, globalSum, 'b');
 	  game.move(move)
@@ -203,6 +205,7 @@ function reset() {
 $('#startBtn').on('click', function(){
 	reset()
 	startPosition = 0
+	single = $('#single').prop('checked')
 })
 $('#clearBtn').on('click', board.clear)
 
