@@ -7,6 +7,9 @@ var $pgn = $('#pgn')
 var globalSum = 0
 var positionCount
 var startPosition = 1
+var single = false
+const MAX_DEPTH = 3 // 3 by default
+var piecesColor = false //by default white pieces if false
 
 var weights = { 'p': 100, 'n': 280, 'b': 320, 'r': 479, 'q': 929, 'k': 60000, 'k_e': 60000 };
 var pst_w = {
@@ -73,14 +76,14 @@ var pst_w = {
 
     // Endgame King Table
     'k_e': [
-            [-50, -40, -30, -20, -20, -30, -40, -50],
-            [-30, -20, -10,   0,   0, -10, -20, -30],
-            [-30, -10,  20,  30,  30,  20, -10, -30],
-            [-30, -10,  30,  40,  40,  30, -10, -30],
-            [-30, -10,  30,  40,  40,  30, -10, -30],
-            [-30, -10,  20,  30,  30,  20, -10, -30],
-            [-30, -30,   0,   0,   0,   0, -30, -30],
-            [-50, -30, -30, -30, -30, -30, -30, -50]
+             [-500, -400, -300, -200, -200, -300, -400, -500],
+            [-300, -200, -100,   0,   0, -100, -200, -300],
+            [-300, -100,  200,  300,  300,  200, -100, -30],
+            [-300, -100,  300,  400,  400,  300, -100, -30],
+            [-300, -100,  300,  400,  400,  300, -100, -30],
+            [-300, -100,  200,  30,  300,  200, -100, -300],
+            [-300, -300,   0,   0,   0,   0, -300, -300],
+            [-500, -300, -300, -300, -300, -300, -300, -500]
         ]
 }
 
@@ -127,48 +130,63 @@ function onSnapEnd () {
   board.position(game.fen())
 }
 
+function analyzeStatus(){
+	var status = ''
+
+	var moveColor = 'White'
+	if (game.turn() === 'b') {
+		moveColor = 'Black'
+	}
+
+	  // checkmate?
+	  if (game.in_checkmate()) {
+		status = 'Game over, ' + moveColor + ' is in checkmate.'
+	  }
+
+	  // draw?
+	  else if (game.in_draw()) {
+		status = 'Game over, drawn position'
+		
+	  }
+
+	  // game still on
+	  else {
+		status = moveColor + ' to move'
+
+		// check?
+		if (game.in_check()) {
+		  status += ', ' + moveColor + ' is in check'
+		  status.text(moveColor + ' is in check')
+		}
+	  }
+	  $('#status').text(status)
+}
 function updateStatus () {
-  var status = ''
-
-  var moveColor = 'White'
-  if (game.turn() === 'b') {
-    moveColor = 'Black'
-  }
-
-  // checkmate?
-  if (game.in_checkmate()) {
-    status = 'Game over, ' + moveColor + ' is in checkmate.'
-  }
-
-  // draw?
-  else if (game.in_draw()) {
-    status = 'Game over, drawn position'
-  }
-
-  // game still on
-  else {
-    status = moveColor + ' to move'
-
-    // check?
-    if (game.in_check()) {
-      status += ', ' + moveColor + ' is in check'
-    }
-  }
-
-  $status.html(status)
+  analyzeStatus()
   $fen.html(game.fen())
   $pgn.html(game.pgn())
-  //play the blacks
+  //play the pc
   var delay = 1000
   setTimeout(function(){
-      if(startPosition === 0){
+      if(startPosition === 0 && single === true){
 	  var currSum = globalSum
 	  positionCount = 0
-	  var [bestMove, bestMoveValue] = minimax(game, 3, Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY, true, -currSum, 'b');
+	  if(piecesColor === true){
+		var [bestMove, bestMoveValue] = minimax(game, MAX_DEPTH, Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY, true, -currSum, 'w');
+	  }
+	  else{
+		var [bestMove, bestMoveValue] = minimax(game, MAX_DEPTH, Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY, true, -currSum, 'b');
+	  }
 	  var move = bestMove
-	  globalSum = evaluateBoard(move, globalSum, 'b');
+	  if(piecesColor === true){
+		globalSum = evaluateBoard(move, globalSum, 'w');
+	  }
+	  else{
+		globalSum = evaluateBoard(move, globalSum, 'b'); 
+	  }
 	  game.move(move)
 	  board.position(game.fen())
+	  analyzeStatus()
 	  
   }
 },delay);
@@ -178,6 +196,7 @@ function updateStatus () {
 var config = {
   draggable: true,
   position: 'clear',
+  orientation:'white',
   onDragStart: onDragStart,
   onDrop: onDrop,
   onSnapEnd: onSnapEnd,
@@ -187,7 +206,13 @@ board = Chessboard('myBoard', config)
 updateStatus()
 
 function reset() {
-    game.reset()
+	 game.reset()
+	if(piecesColor){
+		board.orientation('black')
+	}
+	else{
+		board.orientation('white')
+	}
     globalSum = 0
     remainingPieces = 32
     board.position(game.fen())
@@ -196,13 +221,24 @@ function reset() {
 	$status.text('White to move') 
 	$fen.text('')
 	$pgn.text('')
+	if(piecesColor === true && single === true){
+		var [bestMove, bestMoveValue] = minimax(game, MAX_DEPTH, Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY, true, 0, 'b');
+		var move = bestMove
+		globalSum = evaluateBoard(move, globalSum, 'w');
+		game.move(move)
+		board.position(game.fen())
+		analyzeStatus()
+	}
 
 }
 
 
 $('#startBtn').on('click', function(){
-	reset()
 	startPosition = 0
+	single = $('#single').prop('checked')
+	piecesColor = $('#black_pieces').prop('checked')
+	reset()
+	
 })
 $('#clearBtn').on('click', board.clear)
 
@@ -287,6 +323,7 @@ function minimax(game, depth, alpha, beta, isMaximizingPlayer, sum, color)
     {
         return [null, sum]
     }
+	
 
     // Find maximum/minimum from list of 'children' (possible moves)
     var maxValue = Number.NEGATIVE_INFINITY;
