@@ -156,7 +156,6 @@ function analyzeStatus(){
 		// check?
 		if (game.in_check()) {
 		  status += ', ' + moveColor + ' is in check'
-		  status.text(moveColor + ' is in check')
 		}
 	  }
 	  $('#status').text(status)
@@ -171,23 +170,23 @@ function updateStatus () {
       if(startPosition === 0 && single === true){
 	  var currSum = globalSum
 	  positionCount = 0
-	  if(piecesColor === true){
+	  if(piecesColor){
 		var [bestMove, bestMoveValue] = minimax(game, MAX_DEPTH, Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY, true, -currSum, 'w');
 	  }
 	  else{
 		var [bestMove, bestMoveValue] = minimax(game, MAX_DEPTH, Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY, true, -currSum, 'b');
 	  }
 	  var move = bestMove
-	  if(piecesColor === true){
-		globalSum = evaluateBoard(move, globalSum, 'w');
+	  if(piecesColor){
+		globalSum = evaluateBoard(move, globalSum, 'b');
 	  }
 	  else{
-		globalSum = evaluateBoard(move, globalSum, 'b'); 
+		globalSum = evaluateBoard(move, globalSum, 'w'); 
 	  }
 	  game.move(move)
 	  board.position(game.fen())
 	  analyzeStatus()
-	  
+	  $pgn.html(game.pgn())
   }
 },delay);
   
